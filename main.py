@@ -41,12 +41,17 @@ def imwrite(filename, img, params=None):
         return False
 
 
-def disp_result(img1, img2):
+def disp_result(img1, img2, direction):
     rate = min(800 / (img1.shape[1] * 2), 1.0)
     dst = cv2.resize(cv2.hconcat([img1, img2]), dsize=None, fx=rate, fy=rate)
-    for i in range(10):
-        cv2.line(dst, (0, dst.shape[0] * i // 10),
-                 (dst.shape[1], dst.shape[0] * i // 10), (0, 255, 0), 1)
+    if direction == "h":
+        for i in range(10):
+            cv2.line(dst, (0, dst.shape[0] * i // 10),
+                     (dst.shape[1], dst.shape[0] * i // 10), (0, 255, 0), 1)
+    else:
+        for i in range(10):
+            cv2.line(dst, (dst.shape[1] * i // 10, 0),
+                     (dst.shape[1] * i // 10, dst.shape[0]), (0, 255, 0), 1)
     cv2.line(dst, (dst.shape[1] // 2, 0),
              (dst.shape[1] // 2, dst.shape[0]), (0, 0, 0), 2)
     cv2.putText(dst, 'origin', (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
@@ -88,6 +93,8 @@ def get_degree(img, diff=5):
                             minLineLength=300, maxLineGap=50)
     sum_arg = 0
     cnt = 0
+    sum_arg2 = 0
+    cnt2 = 0
 
     if lines is None:
         return 0
@@ -104,11 +111,20 @@ def get_degree(img, diff=5):
                     cnt += 0.5
                 else:
                     cnt += 1
+            if arg > 90 - diff and arg < 90 + diff:
+                sum_arg2 += arg - 90
+                if arg == 0:
+                    cnt2 += 0.5
+                else:
+                    cnt2 += 1
     #disp([l_img, edges])
-    if cnt == 0:
+    if cnt == 0 and cnt2 == 0:
         return 0
     else:
-        return sum_arg / cnt
+        print(cnt, sum_arg / cnt, cnt2, sum_arg2 / cnt2)
+        if cnt > cnt2 // 2:
+            return (sum_arg / cnt, "h")
+        return (sum_arg2 / cnt2, "v")
 
 
 def get_new_filename(fname, kaku):
@@ -123,7 +139,7 @@ def get_new_filename(fname, kaku):
 
 
 def rotate_img(img):
-    degree = get_degree(img)
+    degree, direction = get_degree(img)
     height = img.shape[0]
     width = img.shape[1]
     center = (int(width/2), int(height/2))
@@ -131,7 +147,7 @@ def rotate_img(img):
     img2 = cv2.warpAffine(img, trans, (width, height),
                           borderValue=(255, 255, 255))
 
-    disp_result(img, img2)
+    disp_result(img, img2, direction)
     return img2
 
 
@@ -211,4 +227,5 @@ def main():
     root.mainloop()
 
 
+print(cv2.__file__)
 main()
