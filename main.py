@@ -97,7 +97,7 @@ def get_degree(img, diff=5):
     cnt2 = 0
 
     if lines is None:
-        return 0
+        return (0, "h")
     for line in lines:
         for x1, y1, x2, y2 in line:
             arg = math.degrees(math.atan2((y2-y1), (x2-x1)))
@@ -119,9 +119,8 @@ def get_degree(img, diff=5):
                     cnt2 += 1
     #disp([l_img, edges])
     if cnt == 0 and cnt2 == 0:
-        return 0
+        return (0, "h")
     else:
-        print(cnt, sum_arg / cnt, cnt2, sum_arg2 / cnt2)
         if cnt > cnt2 // 2:
             return (sum_arg / cnt, "h")
         return (sum_arg2 / cnt2, "v")
@@ -152,14 +151,21 @@ def rotate_img(img):
 
 
 def deal_pdf(path):
-    splitext = os.path.splitext(os.path.basename(path))
-    poppler_path = os.path.join(os.getcwd(), "poppler-0.68.0", "bin")
-    os.environ["PATH"] += os.pathsep + poppler_path
+    try:
+        splitext = os.path.splitext(os.path.basename(path))
+        poppler_path = os.path.join(os.getcwd(), "poppler-0.68.0", "bin")
+        os.environ["PATH"] += os.pathsep + poppler_path
 
-    filepath = os.path.abspath(os.path.dirname(__file__))
-    filepath = os.path.join(filepath, "pdf", path)
+        filepath = os.path.abspath(os.path.dirname(__file__))
+        filepath = os.path.join(filepath, "pdf", path)
 
-    pdfimages = pdf2image.convert_from_path(filepath)
+        pdfimages = pdf2image.convert_from_path(filepath)
+
+    except Exception as e:
+        messagebox.showerror("Error", e)
+        messagebox.showinfo("popplerをインストールしてください。",
+                            "popplerをインストールしていないために起きたエラーの可能性があります。popplerをインストールしてください。https://blog.alivate.com.au/poppler-windows/")
+        return
 
     img_list = []
     for i, im in enumerate(pdfimages):
