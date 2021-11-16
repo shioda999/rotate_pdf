@@ -87,7 +87,8 @@ def get_degree(img, diff=5):
     l_img = img.copy()
     gray = cv2.cvtColor(l_img, cv2.COLOR_BGR2GRAY)
     median = cv2.medianBlur(gray, 5)
-    ret3, th3 = cv2.threshold(median, 0, 255, cv2.THRESH_OTSU)
+    ret3, th3 = cv2.threshold(median, 175, 255, cv2.THRESH_BINARY)
+    print(ret3)
     edges = cv2.Canny(th3, 230, 300, apertureSize=3)
     lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=10,
                             minLineLength=300, maxLineGap=50)
@@ -100,7 +101,9 @@ def get_degree(img, diff=5):
         return (0, "h")
     for line in lines:
         for x1, y1, x2, y2 in line:
-            arg = math.degrees(math.atan2((y2-y1), (x2-x1)))
+            arg = math.degrees(math.atan((y2-y1) / (x2-x1)))
+            arg2 = math.degrees(math.atan(-(x2-x1) / (y2-y1)))
+            # print(arg2)
             if arg > - diff and arg < diff:
                 # if arg != 0:
                 #    cv2.line(l_img, (x1, y1), (x2, y2), (0, 0, 255), 10)
@@ -111,9 +114,13 @@ def get_degree(img, diff=5):
                     cnt += 0.5
                 else:
                     cnt += 1
-            if arg > 90 - diff and arg < 90 + diff:
-                sum_arg2 += arg - 90
-                if arg == 0:
+            if arg2 > - diff and arg2 < diff:
+                # if arg2 != 0:
+                #    cv2.line(l_img, (x1, y1), (x2, y2), (0, 0, 255), 10)
+                # else:
+                #    cv2.line(l_img, (x1, y1), (x2, y2), (255, 0, 0), 10)
+                sum_arg2 += arg2
+                if arg2 == 0:
                     cnt2 += 0.5
                 else:
                     cnt2 += 1
@@ -139,6 +146,7 @@ def get_new_filename(fname, kaku):
 
 def rotate_img(img):
     degree, direction = get_degree(img)
+    print(degree, direction)
     height = img.shape[0]
     width = img.shape[1]
     center = (int(width/2), int(height/2))
@@ -168,10 +176,12 @@ def deal_pdf(path):
         return
 
     img_list = []
+    dir = os.path.dirname(os.path.abspath(__file__))
+    os.mkdir(dir + "\\___temp")
     for i, im in enumerate(pdfimages):
         img = np.asarray(im)
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
-        temp_path = "___temp" + str(i) + ".jpg"
+        temp_path = dir + "\\___temp\\___temp" + str(i) + ".jpg"
         imwrite(temp_path, rotate_img(img))
         img_list.append(temp_path)
 
@@ -182,6 +192,7 @@ def deal_pdf(path):
         f.write(img2pdf.convert(img_list))
     message.set(MESSAGE)
     messagebox.showinfo("処理が完了しました", os.path.basename(path) + "として保存しました。")
+    os.rmtree(dir + "\\___temp")
 
 
 def deal_img(path):
