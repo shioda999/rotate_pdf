@@ -55,9 +55,9 @@ def disp_result(img1, img2, direction):
     cv2.line(dst, (dst.shape[1] // 2, 0),
              (dst.shape[1] // 2, dst.shape[0]), (0, 0, 0), 2)
     cv2.putText(dst, 'before', (10, 30), cv2.FONT_HERSHEY_TRIPLEX,
-                1, (255, 0, 0), 1.5, cv2.LINE_4)
+                1, (255, 0, 0), 1, cv2.LINE_4)
     cv2.putText(dst, 'after', (dst.shape[1] // 2 + 10, 30),
-                cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 0, 0), 1.5, cv2.LINE_4)
+                cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 0, 0), 1, cv2.LINE_4)
     cv2.imshow("image", dst)
     cv2.waitKey(0)
 
@@ -88,7 +88,6 @@ def get_degree(img, diff=5):
     gray = cv2.cvtColor(l_img, cv2.COLOR_BGR2GRAY)
     median = cv2.medianBlur(gray, 5)
     ret3, th3 = cv2.threshold(median, 175, 255, cv2.THRESH_BINARY)
-    print(ret3)
     edges = cv2.Canny(th3, 230, 300, apertureSize=3)
     lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=10,
                             minLineLength=300, maxLineGap=50)
@@ -101,6 +100,12 @@ def get_degree(img, diff=5):
         return (0, "h")
     for line in lines:
         for x1, y1, x2, y2 in line:
+            if y1 == y2:
+                cnt += 0.5
+                continue
+            if x1 == x2:
+                cnt2 += 0.5
+                continue
             arg = math.degrees(math.atan((y2-y1) / (x2-x1)))
             arg2 = math.degrees(math.atan(-(x2-x1) / (y2-y1)))
             # print(arg2)
@@ -110,20 +115,14 @@ def get_degree(img, diff=5):
                 # else:
                 #    cv2.line(l_img, (x1, y1), (x2, y2), (255, 0, 0), 10)
                 sum_arg += arg
-                if arg == 0:
-                    cnt += 0.5
-                else:
-                    cnt += 1
+                cnt += 1
             if arg2 > - diff and arg2 < diff:
                 # if arg2 != 0:
                 #    cv2.line(l_img, (x1, y1), (x2, y2), (0, 0, 255), 10)
                 # else:
                 #    cv2.line(l_img, (x1, y1), (x2, y2), (255, 0, 0), 10)
                 sum_arg2 += arg2
-                if arg2 == 0:
-                    cnt2 += 0.5
-                else:
-                    cnt2 += 1
+                cnt2 += 1
     #disp([l_img, edges])
     if cnt == 0 and cnt2 == 0:
         return (0, "h")
