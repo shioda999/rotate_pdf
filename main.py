@@ -54,10 +54,10 @@ def disp_result(img1, img2, direction):
                      (dst.shape[1] * i // 10, dst.shape[0]), (0, 255, 0), 1)
     cv2.line(dst, (dst.shape[1] // 2, 0),
              (dst.shape[1] // 2, dst.shape[0]), (0, 0, 0), 2)
-    cv2.putText(dst, 'origin', (10, 30), cv2.FONT_HERSHEY_SIMPLEX,
-                1, (255, 0, 0), 2, cv2.LINE_4)
-    cv2.putText(dst, 'result', (dst.shape[1] // 2 + 10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_4)
+    cv2.putText(dst, 'before', (10, 30), cv2.FONT_HERSHEY_TRIPLEX,
+                1, (255, 0, 0), 1.5, cv2.LINE_4)
+    cv2.putText(dst, 'after', (dst.shape[1] // 2 + 10, 30),
+                cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 0, 0), 1.5, cv2.LINE_4)
     cv2.imshow("image", dst)
     cv2.waitKey(0)
 
