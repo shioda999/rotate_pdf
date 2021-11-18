@@ -146,15 +146,21 @@ def get_new_filename(fname, kaku):
 
 
 def rotate_img(img):
-    degree, direction = get_degree(img)
-    print(degree, direction)
     height = img.shape[0]
     width = img.shape[1]
     center = (int(width/2), int(height/2))
-    trans = cv2.getRotationMatrix2D(center, degree, 1.0)
-    img2 = cv2.warpAffine(img, trans, (width, height),
-                          borderValue=(255, 255, 255))
+    for i in range(2):
+        if i == 0:
+            degree, direction = get_degree(img)
+        else:
+            deg, _ = get_degree(img2)
+            degree += deg
+        print(degree, direction)
+        trans = cv2.getRotationMatrix2D(center, degree, 1.0)
+        img2 = cv2.warpAffine(img, trans, (width, height),
+                              borderValue=(255, 255, 255))
 
+    print(degree, direction)
     disp_result(img, img2, direction, degree)
     return img2, degree
 
@@ -176,6 +182,8 @@ def deal_pdf(path):
                             "popplerをインストールしていないために起きたエラーの可能性があります。popplerをインストールしてください。https://blog.alivate.com.au/poppler-windows/")
         return
 
+    message.set(os.path.basename(path) + "を処理しています。")
+    root.update()
     img_list = []
     dir = os.path.dirname(os.path.abspath(__file__))
     if os.path.isdir(dir + "\\___temp") == False:
