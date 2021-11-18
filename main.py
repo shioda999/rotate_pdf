@@ -8,6 +8,8 @@ from tkinter import messagebox
 import os.path
 import pdf2image
 import img2pdf
+import re
+import shutil
 
 
 message = None
@@ -41,7 +43,7 @@ def imwrite(filename, img, params=None):
         return False
 
 
-def disp_result(img1, img2, direction):
+def disp_result(img1, img2, direction, degree):
     rate = min(800 / (img1.shape[1] * 2), 1.0)
     dst = cv2.resize(cv2.hconcat([img1, img2]), dsize=None, fx=rate, fy=rate)
     if direction == "h":
@@ -56,7 +58,7 @@ def disp_result(img1, img2, direction):
              (dst.shape[1] // 2, dst.shape[0]), (0, 0, 0), 2)
     cv2.putText(dst, 'before', (10, 30), cv2.FONT_HERSHEY_TRIPLEX,
                 1, (255, 0, 0), 1, cv2.LINE_4)
-    cv2.putText(dst, 'after', (dst.shape[1] // 2 + 10, 30),
+    cv2.putText(dst, 'after' + " (" + str(round(degree, 3)) + ")", (dst.shape[1] // 2 + 10, 30),
                 cv2.FONT_HERSHEY_TRIPLEX, 1, (255, 0, 0), 1, cv2.LINE_4)
     cv2.imshow("image", dst)
     cv2.waitKey(0)
@@ -87,7 +89,7 @@ def get_degree(img, diff=5):
     l_img = img.copy()
     gray = cv2.cvtColor(l_img, cv2.COLOR_BGR2GRAY)
     median = cv2.medianBlur(gray, 5)
-    ret3, th3 = cv2.threshold(median, 175, 255, cv2.THRESH_BINARY)
+    ret3, th3 = cv2.threshold(median, 0, 255, cv2.THRESH_OTSU)
     edges = cv2.Canny(th3, 230, 300, apertureSize=3)
     lines = cv2.HoughLinesP(edges, 1, np.pi/180, threshold=10,
                             minLineLength=300, maxLineGap=50)
@@ -153,8 +155,8 @@ def rotate_img(img):
     img2 = cv2.warpAffine(img, trans, (width, height),
                           borderValue=(255, 255, 255))
 
-    disp_result(img, img2, direction)
-    return img2
+    disp_result(img, img2, direction, degree)
+    return img2, degree
 
 
 def deal_pdf(path):
@@ -176,22 +178,22 @@ def deal_pdf(path):
 
     img_list = []
     dir = os.path.dirname(os.path.abspath(__file__))
-    os.mkdir(dir + "\\___temp")
+    if os.path.isdir(dir + "\\___temp") == False:
+        os.mkdir(dir + "\\___temp")
     for i, im in enumerate(pdfimages):
         img = np.asarray(im)
         img = cv2.cvtColor(img, cv2.COLOR_RGB2BGR)
         temp_path = dir + "\\___temp\\___temp" + str(i) + ".jpg"
-        imwrite(temp_path, rotate_img(img))
+        imwrite(temp_path, rotate_img(img)[0])
         img_list.append(temp_path)
 
     fname = os.path.dirname(path) + "/" + splitext[0]
     path = get_new_filename(fname, splitext[-1])
-    print(img_list)
     with open(path, "wb") as f:
         f.write(img2pdf.convert(img_list))
     message.set(MESSAGE)
     messagebox.showinfo("処理が完了しました", os.path.basename(path) + "として保存しました。")
-    os.rmtree(dir + "\\___temp")
+    shutil.rmtree(dir + "\\___temp")
 
 
 def deal_img(path):
@@ -203,7 +205,11 @@ def deal_img(path):
         return
     message.set(os.path.basename(path) + "を処理しています。")
     root.update()
-    img2 = rotate_img(img)
+    img2, degree = rotate_img(img)
+    if degree == 0:
+        messagebox.showinfo(
+            "処理が完了しました", os.path.basename(path) + "は傾きが検出できませんでした。")
+        return
     fname = os.path.dirname(path) + "/" + splitext[0]
     path = get_new_filename(fname, splitext[-1])
     imwrite(path, img2)
@@ -219,9 +225,19 @@ def make_file(path):
         deal_img(path)
 
 
+def get_file_paths(data):
+    if data[0] == '{':
+        paths = re.split('({|})', data)
+        paths = list(filter(lambda x: len(x) > 1, paths))
+    else:
+        paths = data.split()
+    return paths
+
+
 def drop(event):
-    path = event.data[1:-1]
-    make_file(path)
+    path_list = get_file_paths(event.data)
+    for path in path_list:
+        make_file(path)
 
 
 def main():
@@ -243,5 +259,4 @@ def main():
     root.mainloop()
 
 
-print(cv2.__file__)
 main()
